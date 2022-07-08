@@ -48,7 +48,7 @@ public class TwitterSpout extends BaseRichSpout {
             if(streamingTweet.getErrors() != null) {
                 streamingTweet.getErrors().forEach(System.out::println);
             } else if (streamingTweet.getData() != null) {
-                //System.out.println("New streaming tweet: " + streamingTweet.getData().getText());
+                System.out.println("New streaming tweet: " + streamingTweet.getData().getText());
                 TwitterSpout.this.tweetQueue.offer(streamingTweet.getData());
             }
         }

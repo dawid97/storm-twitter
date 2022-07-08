@@ -1,6 +1,7 @@
 
 package bolt;
 
+import com.twitter.clientlib.model.Tweet;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.task.OutputCollector;
@@ -17,33 +18,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 @SuppressWarnings({"rawtypes", "serial"})
-public class TweetCounterBolt extends BaseRichBolt {
+public class TweetFormatterBolt extends BaseRichBolt {
 
-    private Map<String, Long> counter;
+    private Map<String, String> tweets;
 
     private OutputCollector collector;
 
-    private String[] wordsFilters;
-
     private int tickFrequency;
 
-    public TweetCounterBolt(String[] wordsFilters, int tickFrequency) {
-        this.wordsFilters = wordsFilters;
+    public TweetFormatterBolt(int tickFrequency) {
         this.tickFrequency = tickFrequency;
     }
 
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector collector) {
-        this.counter = new HashMap<>();
-        for (String filter : this.wordsFilters) {
-            this.counter.put(filter, 0L);
-        }
+        this.tweets = new HashMap<>();
         this.collector = collector;
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-        outputFieldsDeclarer.declare(new Fields("filter", "tickdate", "totalcount"));
+        outputFieldsDeclarer.declare(new Fields("tickdate", "author_id", "text"));
     }
 
     @Override
@@ -63,23 +58,15 @@ public class TweetCounterBolt extends BaseRichBolt {
 
     @Override
     public void execute(Tuple input) {
-
         if (isTickTuple(input)) {
-            for (String filter : this.wordsFilters) {
-                System.out.println("TICK with [" + filter + "]");
+            for (Map.Entry<String, String> entry : tweets.entrySet()) {
                 SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm");
                 Date date = new Date();
-                this.collector.emit(new Values(filter, format.format(date) + ":00", this.counter.get(filter)));
-                // System.out.println("Number of tweet with [" + filter + "] at
-                // [" + format.format(date) + "] : " + counter.get(filter));
-                this.counter.put(filter, 0L);
+                this.collector.emit(new Values(format.format(date) + ":00", entry.getKey(), entry.getValue()));
             }
         } else {
-            String filter = (String) input.getValueByField("filter");
-            Long count = this.counter.get(filter);
-            count = count == null ? 1L : count + 1;
-            this.counter.put(filter, count);
+            Tweet tweet = (Tweet) input.getValueByField("tweet");
+            this.tweets.put(tweet.getAuthorId(), tweet.getText());
         }
-        System.out.println("Counter: " + this.counter.toString());
     }
 }

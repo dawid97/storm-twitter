@@ -39,13 +39,13 @@ public class TweetFilterBolt extends BaseRichBolt {
                     length = 100;
                 }
                 System.out.println("Received tweet with [" + filter + "] : " + text.substring(0, length));
-                this.collector.emit(new Values(filter, tweet));
+                this.collector.emit(new Values(tweet));
             }
         }
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields("filter", "tweet"));
+        declarer.declare(new Fields("tweet"));
     }
 }
